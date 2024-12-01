@@ -28,10 +28,17 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-    volumes:
-      - ./kafka-init:/kafka-init
-    command: ["sh", "-c", "(/usr/bin/kafka-topics --bootstrap-server localhost:29092 --create --topic processed_data --partitions 1 --replication-factor 1) && sleep infinity"]
 
+  topic-init:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - kafka
+    networks:
+      - kafka-network
+    entrypoint: >
+      sh -c "
+      /usr/bin/kafka-topics --bootstrap-server kafka:9092 --create --topic processed_data --partitions 1 --replication-factor 1
+      "
 
   my-python-producer:
     image: mpradeep954/fetch-de-data-gen

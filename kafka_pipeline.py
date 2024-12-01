@@ -8,10 +8,11 @@ processed_topic_name = 'processed_data'
 bootstrap_servers = 'localhost:29092'
 
 # Pull some insights:
-PROCESSED_COUNT = 0
-ERROR_COUNT = 0
-ANDROID_LOGINS = 0
-IOS_LOGINS = 0
+processed_count = 0
+error_count = 0
+android_logins = 0
+ios_logins = 0
+start_time = datetime.now()
 
 
 # Consumer
@@ -32,17 +33,17 @@ producer = KafkaProducer(
 
 def insights():
   time_span = (datetime.now() - start_time).seconds
-  print(f'Insights - {datetime.now()}')
-  print(f'Processed incoming messages: {PROCESSED_COUNT}')
-  print(f'Errored Messages: {ERROR_COUNT}')
-  print(f'Android Logins: {ANDROID_LOGINS}')
-  print(f'iOS Logins: {IOS_LOGINS}')
+  print(f'Insights at - {datetime.now()}')
+  print(f'Processed incoming messages: {processed_count}')
+  print(f'Errored Messages: {error_count}')
+  print(f'Android Logins: {android_logins}')
+  print(f'iOS Logins: {ios_logins}')
   print(f'Over the past {time_span} seconds')
 
-def format_data(key, value):
+def format_data(value):
+  global android_logins, ios_logins
   try:
     data = {}
-    data['key'] = key
     data['user_id'] = value['user_id']
     data['state'] = value['locale']
     data['app_version'] = value['app_version']
@@ -54,33 +55,36 @@ def format_data(key, value):
     data['timestamp'] = formatted_time
 
     if value['device_type'] == 'android':
-      ANDROID_LOGINS += 1
+      android_logins += 1
     if value['device_type'] == 'iOS':
-      IOS_LOGINS += 1
+      ios_logins += 1
 
     return data
   except KeyError as e:
     print(f'Error, missing data field: {e}')
 
-Print('Consuming message')
+print('Consuming message')
 
 # Process messages:
 for message in consumer:
   incoming_data = message.value
-  key = message.key
 
   print(f'Processing incoming message: {incoming_data}')
 
-  processed_data = format_data(key, incoming_data)
+  processed_data = format_data(incoming_data)
 
   if processed_data:
-    PROCESSED_COUNT +=1
-    print(f'Imcoming message processed: {processed_data}')
-    producer.send(processed_topic_name, value=processed_data)
+    processed_count +=1
+    print(f'Incoming message processed: {processed_data}')
+    producer.send('processed_data', value=processed_data).add_callback(
+    lambda metadata: print(f"Message sent to {metadata.topic}, partition {metadata.partition}")).add_errback(
+    lambda err: print(f"Failed to send message: {err}")
+    )
+    producer.flush()
   else:
-    ERROR_COUNT += 1
+    error_count += 1
     print(f'Incoming message NOT processed: {incoming_data}')
-    # Could improve message to more clearly explain issue.  eg/ missing a field
 
-  if PROCESSED_COUNT % 10 == 0:
+# Run insights report every 30 seconds
+  if processed_count % 30 == 0:
     insights()
