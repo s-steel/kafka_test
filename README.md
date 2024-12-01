@@ -10,7 +10,7 @@ Ensure that the pipeline can handle the streaming data continuously and efficien
 handling any error messages or missing fields
 
 ## Design
-This is a simple pipeline for consuming the messages from `my-python-producer`, transforming and filtering some of the data, and then sending it to a new topin called `processed_data`.  
+This is a simple pipeline for consuming the messages from `my-python-producer`, transforming and filtering some of the data, and then sending it to a new topic called `processed_data`.  The docker file creates the necessary Kafka topics.  
 
 There is some error catching in place to determine if the data is incomplete. In doing this we can see that the data field `device_type` is what we will typically see missing. The pipeline will not fail when we hit errors, but will instead not process the data.  
 
@@ -51,8 +51,8 @@ for message in consumer:
    - Use managed Kafka services to manage infrastructure, scaling, and security.
    - Use Terraform to provision the necessary cloud resources.
    - Optimize partitioning of the topics to distribute load and match the number of consumers.
-2. What other components would you want to add to make this production ready?
-  One would be to create a new topic to consume all the errored messages that did not get processed so we can analyize this and correct data issues if necessary. Another would be to store the insights data for further analysis.  This would allow monitoring and visibility into the pipeline and the data that is flowing through it. You could also create alerting based off the insights.  I would also want to refactor the code to ensure better readability and efficiency.
+2. What other components would you want to add to make this production ready?  
+  One would be to create a new topic to consume all the errored messages that did not get processed so we can analyize this and correct data issues if necessary. Another would be to store the insights data for further analysis.  This would allow monitoring and visibility into the pipeline and the data that is flowing through it. You could also create alerting based off the insights.  I would also want to refactor the code to ensure better readability and efficiency and build out thorough testing to provide 100% test covereage of code.
 3. How can this application scale with a growing dataset?
    - Use Kafka managed services for autoscaling consumers and producers based on metrics.
    - Design the topics to have sufficient partitions and ensure there are enough consumers for parallelism.
